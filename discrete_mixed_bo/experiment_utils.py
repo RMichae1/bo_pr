@@ -76,6 +76,7 @@ from discrete_mixed_bo.problems.svm import SVMFeatureSelection
 from discrete_mixed_bo.problems.welded_beam import WeldedBeam
 from discrete_mixed_bo.problems.xgboost_hp import XGBoostHyperparameter
 from discrete_mixed_bo.problems.poli_bridge import PoliObjective
+from discrete_mixed_bo.problems.poli_bridge import PoliMultiObjective
 from discrete_mixed_bo.rffs import get_gp_sample_w_transforms
 
 
@@ -728,12 +729,30 @@ def get_problem(name: str, dim: Optional[int] = None, **kwargs) -> DiscreteTestP
             continuous=kwargs.get("continuous", False),
         )
     elif name == "poli":
+        alphabet = kwargs.get("alphabet", None) if "" in kwargs.get("alphabet", None) else [""] + kwargs.get("alphabet", None)
         return PoliObjective(
             black_box=kwargs["black_box"],
-            alphabet=kwargs.get("alphabet", None),
+            alphabet=alphabet,
             sequence_length=kwargs.get("sequence_length", None),
             negate=kwargs.get("negate", False),
         )
+    elif name == "poli_moo":
+        alphabet = kwargs.get("alphabet", None) if "" in kwargs.get("alphabet", None) else [""] + kwargs.get("alphabet", None)
+        s_len = kwargs.get("sequence_length", None)
+        if s_len is None:
+            raise RuntimeError("Sequence Length None!")
+        integer_bounds = torch.zeros(2, s_len)
+        integer_bounds[1, :] = len(alphabet)
+        problem = PoliMultiObjective(
+            black_box=kwargs["black_box"],
+            alphabet=alphabet,
+            sequence_length=kwargs.get("sequence_length", None),
+            negate=kwargs.get("negate", False),
+            ref_point = kwargs.get("y0", None),
+            integer_indices=list(range(s_len)), 
+            integer_bounds=integer_bounds,
+        )
+        return problem
     else:
         raise ValueError(f"Unknown function name: {name}!")
 
