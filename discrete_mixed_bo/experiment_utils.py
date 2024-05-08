@@ -37,6 +37,7 @@ from botorch.utils.multi_objective.box_decompositions.non_dominated import (
 )
 from botorch.utils.sampling import draw_sobol_samples
 from botorch.utils.transforms import normalize, unnormalize
+from botorch.utils.multi_objective import infer_reference_point
 from gpytorch.constraints import GreaterThan, Interval
 from gpytorch.likelihoods import GaussianLikelihood
 from gpytorch.mlls import SumMarginalLogLikelihood
@@ -737,7 +738,7 @@ def get_problem(name: str, dim: Optional[int] = None, **kwargs) -> DiscreteTestP
             negate=kwargs.get("negate", False),
         )
     elif name == "poli_moo":
-        alphabet = kwargs.get("alphabet", None) if "" in kwargs.get("alphabet", None) else [""] + kwargs.get("alphabet", None)
+        alphabet = kwargs.get("alphabet", None)
         s_len = kwargs.get("sequence_length", None)
         if s_len is None:
             raise RuntimeError("Sequence Length None!")
@@ -748,7 +749,7 @@ def get_problem(name: str, dim: Optional[int] = None, **kwargs) -> DiscreteTestP
             alphabet=alphabet,
             sequence_length=kwargs.get("sequence_length", None),
             negate=kwargs.get("negate", False),
-            ref_point = kwargs.get("y0", None),
+            ref_point = infer_reference_point(kwargs.get("y0", None)), # NOTE from infer_reference_point: this assumes maximization of all objectives.
             integer_indices=list(range(s_len)), 
             integer_bounds=integer_bounds,
         )
