@@ -60,7 +60,8 @@ class PoliMultiObjective(DiscreteTestProblem, MultiObjectiveTestProblem):
     """
     num_objectives: int
     _ref_point: List[float]
-    _discrete_values = {}
+    _discrete_values: dict
+    _bounds: list
 
     def __init__(
         self,
@@ -77,8 +78,8 @@ class PoliMultiObjective(DiscreteTestProblem, MultiObjectiveTestProblem):
         self.dim = sequence_length
         self.black_box = black_box
         alphabet = alphabet or self.black_box.info.alphabet
-        self._ref_point = ref_point
-        self.num_objectives = ref_point.shape[1]
+        self._ref_point = ref_point  #  NOTE: this assumes maximization of all objectives.
+        self.num_objectives = ref_point.shape[-1]
         if alphabet is None:
             raise ValueError("Alphabet must be provided.")
 
@@ -91,12 +92,13 @@ class PoliMultiObjective(DiscreteTestProblem, MultiObjectiveTestProblem):
         )
         self._setup(integer_indices=integer_indices)
         self.discrete_values = BufferDict()
-        if self._discrete_values is None:
-            self._discrete_values = {f"pos_{i}": alphabet.values() for i in range(sequence_length)}
-        for k, v in self._discrete_values.items():
-            self.discrete_values[k] = torch.tensor(v, dtype=torch.float)
-            # self.discrete_values[k] /= self.discrete_values[k].max()
+        self._discrete_values = {f"pos_{i}": list(self.alphabet_s_to_i.values()) for i in range(sequence_length)}
+        # for k, v in self._discrete_values.items():
+        #     self.discrete_values[k] = torch.tensor(v, dtype=torch.float)
+        #     self.discrete_values[k] /= self.discrete_values[k].max()
         # super().__init__(noise_std, negate, categorical_indices=list(range(self.dim)))
+        for v in self._discrete_values.values():
+            self._bounds.append((0, len(alphabet)))
 
     def evaluate_true(self, X: torch.Tensor):
         # Evaluate true seems to be expecting
